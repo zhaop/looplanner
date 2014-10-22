@@ -1,0 +1,30 @@
+occupied = schedule[day][period]
+-----------------------------
+occupied is a bit: either 0 or 1
+
+day is a digit from 0 to 9:
+0 to 4 is Monday to Friday for even weeks
+5 to 9 is Monday to Friday for odd weeks
+
+period is a digit from 0 to 21:
+0 is the period from 08:30 to 09:00
+... and so on until
+21 is the period from 19:00 to 19:30
+
+schedule = schedules[course_code][section_code]
+-------------------------------------------
+schedule is a schedule array
+course_code is like (ECE254) (NO space!)
+section_code is like (TUT 101) (space-separated!)
+
+
+End result:
+---------
+occupied = schedules[course_code][section_code][day][period]
+
+====================================
+detailed_selections_labels = {
+	"ECE484 MSCI331 MSCI432 MTE241 NE353": [
+		"ECE484-001,101,201 MSCI331-001,101 MSCI432-001,101 MTE241-001,101,201 NE353-001,101",
+		"ECE484-001,101,201 MSCI331-001,101 MSCI432-001,101 MTE241-001,102,201 NE353-001,101",
+		"ECE484-001,101,201 MSCI331-001,101 MSCI432-001,101 MTE241-001,102,203 NE353-001,101"
