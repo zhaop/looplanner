@@ -817,8 +817,10 @@ app.view = function(ctrl) {
       m("footer", [
         "Send bugs or feedback to ",
         m("a", {href: "mailto:yupeng.zhao@uwaterloo.ca"}, "yupeng.zhao@uwaterloo.ca"),
-        " or ",
-        m("a", {href: "https://twitter.com/zhaopatrick"}, "@zhaopatrick"),
+        " / ",
+        m("a", {href: "https://twitter.com/zhaopatrick"}, "tweet me"),
+        " / ",
+        m("a", {href: "https://github.com/zhaop/looplanner"}, "github"),
         ". ",
         ["For great justice.", "For great good.", "For science."][(new Date).getMinutes()%3],
       ]),
