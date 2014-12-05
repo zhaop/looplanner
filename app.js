@@ -771,6 +771,14 @@ app.view = function(ctrl) {
         m("span", "Stream of consciousness"),
         ctrl.debug(),
       ]),*/
+      m("footer", [
+        "Send bugs or feedback to ",
+        m("a", {href: "mailto:yupeng.zhao@uwaterloo.ca"}, "yupeng.zhao@uwaterloo.ca"),
+        " or ",
+        m("a", {href: "https://twitter.com/zhaopatrick"}, "@zhaopatrick"),
+        ". ",
+        ["For great justice.", "For great good.", "For science."][(new Date).getMinutes()/20 | 0],
+      ]),
     ]),
   ]);
 };
