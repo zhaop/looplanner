@@ -68,9 +68,10 @@ app.state = {
 };
 
 app.controller = function() {
-  this.preferred_input = m.prop("ME269 ECE484 MTE420 ECE254 ME360 MSCI331 MSCI432 MTE241 NE336 NE353 NE445 SYDE252");
-  this.count = m.prop(5);
+  this.preferred_input = m.prop("");
+  this.count = m.prop();
 
+  this.introscreen = m.prop(true);
   this.state = m.prop(app.state.READY);
 
   this.schedules = m.prop({});
@@ -89,23 +90,32 @@ app.controller = function() {
     this.debug(msg + '\n' + this.debug());
     m.redraw();
   };
+
+  this.go_example = function () {
+    this.preferred_input("ME269 ECE484 MTE420 ECE254 ME360 MSCI331 MSCI432 MTE241 NE336 NE353 NE445 SYDE252");
+    this.count(5);
+    this.go(this.preferred_input, this.count);
+  };
   
-  this.go = function(preferred_input, count) {
+  this.go = function(preferred_input, count, e) {
     
     var self = this;
 
     // Turn text into array of unique course codes
-    var preferred = preferred_input().split(' ').filter(filters.squish).filter(filters.unique).sort();
+    var preferred = preferred_input().toUpperCase().split(' ').filter(filters.squish).filter(filters.unique).sort();
     count = count();
     console.log("Preferred course array", preferred);
+    console.log("Number of courses", count);
 
     // Sanity checks
-    if (count < 1 || count > 6) {
+    if (!count || count < 1 || count > 6) {
       this.trace("Nope: You must have between 1 and 6 courses");
+      alert("Nope: You must have between 1 and 6 courses.");
       return;
     }
     if (preferred.length < count) {
       this.trace("Nope: Type in more courses you want to take");
+      alert("Nope: Give me " + (count - preferred.length) + " more course you interest.");
       return;
     }
 
@@ -132,7 +142,12 @@ app.controller = function() {
       self.state(app.state.PROCESSING);
       self.trace("Downloaded schedules.");
 
+      console.log('courses', courses);
+
       courses.forEach(function(course) {
+
+        // Skip invalid course
+        if (!course.data.length) return;
 
         // For a single course
         var course_code = course.data[0].subject + course.data[0].catalog_number;
@@ -251,9 +266,10 @@ app.controller = function() {
       self.section_selections(section_selections);
       
       // Show the schedule in the viewer
-      var default_selection = Object.keys(section_selections)[2];
+      var default_selection = Object.keys(section_selections)[0];
       self.viewer.section_selection(section_selections[default_selection]);
       self.active_selection(default_selection);
+      self.introscreen(false);
       self.state(app.state.READY);
 
       console.log("Duration of ctrl.go (ms)", performance.now() - t0);
@@ -555,9 +571,9 @@ app.view = function(ctrl) {
 
   // Labels for the button (changes according to application state)
   var buttonValues = {};
-  buttonValues[app.state.READY]       = "Find timetables";
-  buttonValues[app.state.DOWNLOADING] = "Downloading...";
-  buttonValues[app.state.PROCESSING]  = "Processing...";
+  buttonValues[app.state.READY]       = "Find many timetable";
+  buttonValues[app.state.DOWNLOADING] = "Wait, I download numbers...";
+  buttonValues[app.state.PROCESSING]  = "Wait, I calculate...";
   
   var schedules = ctrl.schedules();
   var section_selections = ctrl.section_selections();
@@ -565,7 +581,7 @@ app.view = function(ctrl) {
 
   // For the active selection, the available section numbers categorised by section type by course
   var section_numbers_by_type_by_course = {};
-  active_selection.split(" ").forEach(function (course_code) {
+  active_selection && active_selection.split(" ").forEach(function (course_code) {
     if (!course_code) return;
 
     var section_numbers_by_type = {};
@@ -583,7 +599,7 @@ app.view = function(ctrl) {
     m("head", [
       (!OFFLINE
       ? m("link", {
-          href: "http://fonts.googleapis.com/css?family=Asap|Pacifico&subset=latin,latin-ext",
+          href: "http://fonts.googleapis.com/css?family=Sunshiney|Arimo&subset=latin,latin-ext",
           rel: "stylesheet"
         })
       : ""
@@ -593,20 +609,26 @@ app.view = function(ctrl) {
         href: "app.css"
       }),
     ]),
-    m("body", [
+    m("body", {class: ctrl.introscreen() ? "introscreen" : ""}, [
       m("div#header", [
-        m("div#logo", "uwPlanner"),
-        m("div#form", [
-          m("p", m.trust("Not the friendliest tool to help you plan your course timetables. Extensively untested, proceed with caution. <em>Send your suggestions to <a href='mailto:yupeng.zhao@uwaterloo.ca'>yupeng.zhao@uwaterloo.ca</a> .</em>")),
-          m("p", [
+        m("div#logo", "LooPlanner"),
+        m("div#search", [
+          m("p.subtitle", [
+            m.trust("Tell me all course you interest, my friend, I find working timetable for you! "),
+            ((ctrl.state() == app.state.READY) ?
+                m("a", {href: "javascript:void(0);", onclick: ctrl.go_example.bind(ctrl)}, "Example?")
+              : "It's coming!"
+            ),
+          ]),
+          m("form", {onsubmit: function (e) {e.preventDefault(); ctrl.go.call(ctrl, ctrl.preferred_input, ctrl.count);}}, [
             m("input.box#preferred", {
-              placeholder: "Courses you like (e.g. \"ECE484 MTE241 MSCI331 ME360\" etc.)",
+              placeholder: "Courses you're interested in (\"ECE484 MTE241 MSCI331 ME360\" etc.)",
               onchange: m.withAttr("value", ctrl.preferred_input),
               value: ctrl.preferred_input()
             }),
             m("input.box#count", {
-              type: "number", min: 1, max: 6, required: "required",
-              placeholder: "Number of courses (1-6)",
+              type: "number", min: 1, max: 6,
+              placeholder: "How many courses (1-6)",
               onchange: function(e) {
                 ctrl.count(Number(e.target.value) ? Number(e.target.value) : '');
               },
@@ -614,15 +636,13 @@ app.view = function(ctrl) {
             }),
             m("input.btn", {
               type: "submit",
-              onclick: ctrl.go.bind(ctrl, ctrl.preferred_input, ctrl.count),
               value: buttonValues[ctrl.state()],
               disabled: (ctrl.state() == app.state.READY) ? "" : "disabled",
             }),
           ]),
         ]),
       ]),
-      (Object.keys(ctrl.schedules()).length
-        ? m("div#main", [
+          m("div#main", Object.keys(ctrl.schedules()).length ? [
             m("div#selections", [
               m("strong", "Possible timetables (" + Object.keys(section_selections).length + ")"),
               m("ul.nice-list", [
@@ -685,7 +705,7 @@ app.view = function(ctrl) {
                         ]);
                       }
                     })
-                  : m("li.none", "(couldn't find any valid timetable)")
+                  : m("li.none", "(No valid timetable found :( ))")
                 )
               ]),
             ]),
@@ -718,9 +738,7 @@ app.view = function(ctrl) {
                 )
               ]),
             ]),
-          ])
-        : ""
-      ),
+          ] : []),
       m("pre#debug", [
         m("span", "Stream of consciousness"),
         ctrl.debug(),
@@ -768,7 +786,7 @@ scheduleViewer.view = function(ctrl) {
     // return pad0(Math.floor(period)) + ':' + ((period*2 % 2) ? '30' : '00')
     //    + '-' + pad0(Math.floor(period+0.5)) + ':' + ((period*2 % 2) ? '00' : '30');
      return pad0(Math.floor(period)) + ':' + ((period*2 % 2) ? '30' : '00')
-      + '-' + pad0(Math.floor(period+1)) + ':' + ((period*2 % 2) ? '30' : '00');
+      + '-' + pad0(Math.floor(period+1)) + ':' + ((period*2 % 2) ? '20' : '00');
   };
   
   // Convert 0 to Mo, 1 to Tu, etc.
@@ -844,7 +862,7 @@ scheduleViewer.view = function(ctrl) {
   var tableCell = function(day, period){
     var label = label_table[period][day];
     var css = componentClass(label);
-    var rowspan;
+    var rowspan, height;
 
     if (label_table[period-1] && label_table[period-1][day] && label_table[period-1][day] == label) {
       // No cell here, there's already a rowspan'd cell above
@@ -871,10 +889,11 @@ scheduleViewer.view = function(ctrl) {
       }
 
       rowspan = label ? period2 - period : 1; // No rowspan for empty cells
+      height = rowspan * 20;
       if (rowspan > 1) {
         css += " tall";
       }
-      return {label: nl2br(label), class: css, rowspan: rowspan};
+      return {label: nl2br(label), class: css, rowspan: rowspan, height: height};
     }
   };
   
@@ -894,12 +913,15 @@ scheduleViewer.view = function(ctrl) {
           (period%2-1) ? m("th.period", {rowspan: 2}, periodToString(period)) : "",    // 08:30-09:30, etc.
           [0, 1, 2, 3, 4].map(function (day) {
             var cell = tableCell(day, period);
-            return cell ? m("td", {class: cell.class, rowspan: cell.rowspan}, m("div", m("span", cell.label))) : "";
+            return cell ? m("td", {class: cell.class, style: "height: " + cell.height + "px", rowspan: cell.rowspan}, m("div", m("span", cell.label))) : "";
           }),
         ]);
       }),
     ]),
-    m("div", "(ev): Even weeks. (od): Odd weeks."),
+    m("div.legend", ["(ev): Even weeks. (od): Odd weeks.", m("br"),
+      m("span.lecture"), "Lecture", m("span.tutorial"), "Tutorial", m("span.laboratory"), "Laboratory", m("br"), 
+      m("span.project"), "Project", m("span.conflict"), "Conflict", m("span.something"), "Others", 
+    ]),
   ]);
 };
 
