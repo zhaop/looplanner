@@ -597,6 +597,7 @@ app.view = function(ctrl) {
   var schedules = ctrl.schedules();
   var section_selections = ctrl.section_selections();
   var active_selection = ctrl.active_selection();
+  var hover_course = ctrl.hover_course();
 
   // For the active selection, the available section numbers categorised by section type by course
   var section_numbers_by_type_by_course = {};
@@ -639,7 +640,7 @@ app.view = function(ctrl) {
             ", my friend, I find many working timetable for you! ",
             ((ctrl.state() == app.state.READY) ?
                 m("a", {href: "javascript:void(0);", onclick: ctrl.go_example.bind(ctrl)}, "(Try example)")
-              : "It's coming!"
+              : "Is coming!"
             ),
           ]),
           m("form", {onsubmit: function (e) {e.preventDefault(); ctrl.go.call(ctrl, ctrl.preferred_input, ctrl.count);}}, [
@@ -694,7 +695,7 @@ app.view = function(ctrl) {
                           m("ul.course-list", [
                             Object.keys(section_numbers_by_type_by_course).map(function (course_code) {
                               return m("li", {
-                                  class: (ctrl.hover_course() == course_code) ? 'hover': '',
+                                  class: (hover_course == course_code) ? 'hover': '',
                                   onmouseover: ctrl.hover_course.bind(ctrl, course_code),
                                   onmouseout: ctrl.hover_course.bind(ctrl, ''),
                                 }, [
@@ -722,12 +723,19 @@ app.view = function(ctrl) {
                           ])
                         ]);
                       } else {
+                        // Not currently active timetables
                         return m("li", [
                           m("a", {
                             href: "#",
-                            class: "",
+                            class: (hover_course && (selection.indexOf(hover_course) != -1) ? "lighthover": ""),
                             onclick: ctrl.selection_click.bind(ctrl, section_selections[selection], selection)
-                          }, selection),
+                          }, selection.split(" ").map(function (course_code) {
+                            // Highlight current hover_course
+                            return [
+                              m("span", {class: (course_code == hover_course) ? "hover" : ""}, course_code),
+                              " ",
+                            ];
+                          })),
                         ]);
                       }
                     })
@@ -741,7 +749,7 @@ app.view = function(ctrl) {
                 (ctrl.preferred().length
                   ? ctrl.preferred().map(function (course_code) {
                       return m("li", {
-                          class: (ctrl.hover_course() == course_code) ? "hover" : "",
+                          class: (hover_course == course_code) ? "hover" : "",
                           onmouseover: ctrl.hover_course.bind(ctrl, course_code),
                           onmouseout: ctrl.hover_course.bind(ctrl, ''),
                         }, m("a", {
