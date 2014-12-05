@@ -23,9 +23,10 @@ li.none {
 	top: 0;
 	width: 100%;
 	height: 50px;
-	background-color: #b32400;
+	background-color: #ad2300;
 	color: #fff;
-	/*border-*/bottom: 3px solid #661400;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.26);
+	/*border-bottom: 3px solid #661400;*/
 	transition: padding 0.4s;
 	-webkit-transition: padding 0.4s;
 }
@@ -90,29 +91,44 @@ li.none {
 	font-family: "Arimo", sans-serif;
 }
 
-.introscreen #header .box {
-	border-bottom-color: #FFD6CC;
+.introscreen #header .box, .introscreen #header select {
+	border-bottom-color: #ffc2b3;
 }
 
 #header .box {
 	font-size: 20px;
 	border: none;
-	color: #FFD6CC;
-	border-bottom: 1px dashed #b32400;
+	color: #ffc2b3;
+	border-bottom: 1px solid #ad2300;
 	background: none;
-	padding: 9px;
+	padding: 9px 0;
 	outline: none;
 	margin-right: 9px;
 	text-overflow: ellipsis;
 }
 
-#header .box:hover {
-	color: #fff;
+#header select {
+	font-family: "Arimo", sans-serif;
+	font-size: 20px;
+	color: #ffc2b3;
+	background: transparent;
+	padding: 8px 0;
+	margin-right: 9px;
+	outline: none;
+	border: none;
+	border-bottom: 1px solid #ad2300;
+	cursor: text;
 }
 
-#header .box:focus {
+#header option {
+	border: none;
+	outline: none;
+	background: #ad2300;
+}
+
+#header .box:hover, #header select:hover, #header .box:focus, #header select:focus {
 	color: #fff;
-	border-bottom-style: solid;
+	border-bottom-color: #fff;
 }
 
 #header .box::-webkit-input-placeholder {
@@ -137,25 +153,29 @@ li.none {
 	margin: 0;
 	padding: 9px;
 	outline: none;
-	border: 1px dashed #FFD6CC;
+	border: 1px solid #ffc2b3;
 	font-size: 20px;
 	font-family: "Arimo", sans-serif;
 	background-color: transparent;
-	color: #FFD6CC;
+	color: #ffd6cc;
+	-webkit-transition: -webkit-transform 0.09s;
+	transition: transform 0.09s;
 }
 
-#header .btn:hover {
+#header .btn:hover, #header .btn:active {
 	color: #fff;
+	border-color: #fff;
 }
 
-#header .btn:focus {
-	color: #fff;
-	border-style: solid;
+#header .btn:active {
+	-webkit-transform: scale(0.98, 0.98);
+	        transform: scale(0.98, 0.98);
 }
 
 #header .btn[disabled] {
 	border: none;
-	color: #FFD6CC;
+	font-style: italic;
+	color: #ffd6cc;
 }
 
 #preferred {
@@ -163,7 +183,7 @@ li.none {
 }
 
 #count {
-	width: 154px;
+	width: 125px;
 	margin: 0 3px;
 	opacity: 1;
 	-moz-appearance: textfield;

@@ -69,7 +69,8 @@ app.state = {
 
 app.controller = function() {
   this.preferred_input = m.prop("");
-  this.count = m.prop();
+  this.count = m.prop(''  );
+  this.term = m.prop(1149);
 
   this.introscreen = m.prop(true);
   this.state = m.prop(app.state.READY);
@@ -94,6 +95,7 @@ app.controller = function() {
   this.go_example = function () {
     this.preferred_input("ME269 ECE484 MTE420 ECE254 ME360 MSCI331 MSCI432 MTE241 NE336 NE353 NE445 SYDE252");
     this.count(5);
+    this.term(1149);
     this.go(this.preferred_input, this.count);
   };
   
@@ -130,7 +132,9 @@ app.controller = function() {
       return ajax.get(api.url.schedule(
         course_code.replace(/[0-9]+/, ''),
         course_code.replace(/[A-Z]+/, '')
-      ));
+      ), {
+        term: self.term()
+      });
     })).then(function(courses) {
       
       // Short-circuit ajax data
@@ -190,6 +194,19 @@ app.controller = function() {
       self.schedules(schedules);
       self.course_data(course_data);
       self.viewer.schedules(schedules);
+
+      // Get only valid course codes in preferred list
+      preferred = Object.keys(schedules);
+      self.preferred(preferred);
+      self.preferred_input(preferred.join(' '));
+
+      // Panic if there are less valid course codes than number requested
+      if (preferred.length < count) {
+        alert("Nope: Some of the course codes were wrong. \r\nMaybe you choose wrong term?");
+        self.state(app.state.READY);
+        m.redraw();
+        return;
+      }
 
       var t0 = performance.now();
       
@@ -267,6 +284,7 @@ app.controller = function() {
       
       // Show the schedule in the viewer
       var default_selection = Object.keys(section_selections)[0];
+      console.log('default_selection', default_selection, 'section_selection', section_selections[default_selection]);
       self.viewer.section_selection(section_selections[default_selection]);
       self.active_selection(default_selection);
       self.introscreen(false);
@@ -277,8 +295,8 @@ app.controller = function() {
       m.redraw();
     });
 
-    // Prevent form submission
-    return false;
+    // Done
+    return;
   };
 
   this.selection_click = function (section_selection, active_selection) {
@@ -614,7 +632,7 @@ app.view = function(ctrl) {
         m("div#logo", "LooPlanner"),
         m("div#search", [
           m("p.subtitle", [
-            m.trust("Tell me all course you interest, my friend, I find working timetable for you! "),
+            m.trust("Tell me every course you interest, my friend, I find many working timetable for you! "),
             ((ctrl.state() == app.state.READY) ?
                 m("a", {href: "javascript:void(0);", onclick: ctrl.go_example.bind(ctrl)}, "Example?")
               : "It's coming!"
@@ -622,18 +640,27 @@ app.view = function(ctrl) {
           ]),
           m("form", {onsubmit: function (e) {e.preventDefault(); ctrl.go.call(ctrl, ctrl.preferred_input, ctrl.count);}}, [
             m("input.box#preferred", {
-              placeholder: "Courses you're interested in (\"ECE484 MTE241 MSCI331 ME360\" etc.)",
+              placeholder: "Courses you're interested in (format: ece484 mte241 msci331 ...)",
               onchange: m.withAttr("value", ctrl.preferred_input),
               value: ctrl.preferred_input()
             }),
             m("input.box#count", {
               type: "number", min: 1, max: 6,
-              placeholder: "How many courses (1-6)",
-              onchange: function(e) {
+              placeholder: "How many you take",
+              onchange: function (e) {
                 ctrl.count(Number(e.target.value) ? Number(e.target.value) : '');
               },
               value: ctrl.count()
             }),
+            m("select#term", {
+              value: ctrl.term(),
+              onchange: function (e) {
+                ctrl.term(e.target.value);
+              }
+            }, [
+              m("option", {value: 1149}, "Fall 2014"),
+              m("option", {value: 1151}, "Winter 2015"),
+            ]),
             m("input.btn", {
               type: "submit",
               value: buttonValues[ctrl.state()],
@@ -705,7 +732,7 @@ app.view = function(ctrl) {
                         ]);
                       }
                     })
-                  : m("li.none", "(No valid timetable found :( ))")
+                  : m("li.none", "No valid timetable found :(")
                 )
               ]),
             ]),
