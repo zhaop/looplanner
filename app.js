@@ -746,18 +746,15 @@ app.view = function(ctrl) {
                   ? ctrl.preferred().map(function (course_code) {
                       return m("li", m("a", {
                         class: (active_selection && active_selection.indexOf(course_code) != -1) ? "active" : "",
-                      }, [
-                        m("span", course_code),
-                        m("br"),
-                        ctrl.course_data()[course_code].title
-                      ]));
+                      }, [m("span", course_code), " ", ctrl.course_data()[course_code].title]
+                      ));
                     })
                   : m("li.none", "(none)")
                 )
               ]),
             ]),
             scheduleViewer.view(ctrl.viewer),
-            m("div#conflicting-pairs", [
+            /*m("div#conflicting-pairs", [
               m("strong", "Courses that cannot be taken together"),
               m("ul", [
                 (ctrl.conflicting_pairs().length
@@ -767,12 +764,12 @@ app.view = function(ctrl) {
                   : m("li.none", "(none)")
                 )
               ]),
-            ]),
+            ]),*/
           ] : []),
-      m("pre#debug", [
+      /*m("pre#debug", [
         m("span", "Stream of consciousness"),
         ctrl.debug(),
-      ]),
+      ]),*/
     ]),
   ]);
 };

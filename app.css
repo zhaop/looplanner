@@ -247,7 +247,7 @@ li.none {
 .course-list {
 	background-color: #e9e9e9;
 	list-style-type: none;
-	padding: 3px;
+	padding: 3px 0;
 	font-size: 1.2em;
 	cursor: default;
 }
@@ -265,11 +265,13 @@ li.none {
 	letter-spacing: 0.04em;
 	color: #333;
 	font-weight: bold;
+	float: right;
+	padding: 4px 3px;
 }
 
 .section-list {
 	margin-left: 3px;
-	padding: 3px;
+	padding: 0;
 }
 
 .section-list li {
@@ -428,7 +430,7 @@ td.something div, .legend span.something {
 #courses {
 	float: right;
 	/*background: #ddf;*/
-	width: 210px;
+	width: 220px;
 	right: 0;
 	margin: 0 3px;
 	padding: 6px;
@@ -437,7 +439,7 @@ td.something div, .legend span.something {
 }
 
 #courses li {
-	font-size: 0.88em;
+	font-size: 0.9em;
 }
 
 #courses a {
@@ -446,6 +448,19 @@ td.something div, .legend span.something {
 
 #courses span {
 	font-weight: bold;
+}
+
+#courses .nice-list a {
+	color: #999;
+}
+
+#courses .nice-list a.active {
+	color: #000;
+	background: #fff;
+}
+
+#courses .nice-list a:hover {
+	background: #eee;
 }
 
 #conflicting-pairs {
