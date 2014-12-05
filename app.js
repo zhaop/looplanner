@@ -4,6 +4,9 @@ var m = m;
 var Q = Q;
 var Combinatorics = Combinatorics;
 
+var ga = ga || function(){};
+// var ga = function () {console.log('ga', arguments);}
+
 Date.prototype.getWeek = function() {
   var onejan = new Date(this.getFullYear(), 0, 1);
   return Math.ceil((((this - onejan) / 86400000) + onejan.getDay() + 1) / 7);
@@ -98,10 +101,11 @@ app.controller = function() {
     this.preferred_input("ME269 ECE484 MTE420 ECE254 ME360 MSCI331 MSCI432 MTE241 NE336 NE353 NE445 SYDE252");
     this.count(5);
     this.term(1149);
+    ga('send', 'event', 'go_example', 'run');
     this.go(this.preferred_input, this.count);
   };
   
-  this.go = function(preferred_input, count, e) {
+  this.go = function(preferred_input, count) {
     
     var self = this;
 
@@ -111,15 +115,19 @@ app.controller = function() {
     console.log("Preferred course array", preferred);
     console.log("Number of courses", count);
 
+    ga('send', 'event', 'go', 'start');
+
     // Sanity checks
     if (!count || count < 2 || count > 6) {
       this.trace("Nope: You must have between 2 and 6 courses");
       alert("Nope: You must have between 2 and 6 courses.");
+      ga('send', 'exception', {'exDescription': "Nope: You must have between 2 and 6 courses ("+count+" given)", 'exFatal': false});
       return;
     }
     if (preferred.length < count) {
       this.trace("Nope: Type in more courses you want to take");
       alert("Nope: Give me " + (count - preferred.length) + " more course you interest.");
+      ga('send', 'exception', {'exDescription': "Nope: Type in " + (count - preferred.length) + " more courses you want to take", 'exFatal': false});
       return;
     }
 
@@ -130,6 +138,7 @@ app.controller = function() {
 
     // Get course schedules
     var schedules = {}, course_schedule, course_data = {};
+    var t0 = performance.now(), download_time, processing_time;
     Q.all(preferred.map(function(course_code) {
       return ajax.get(api.url.schedule(
         course_code.replace(/[0-9]+/, ''),
@@ -191,6 +200,9 @@ app.controller = function() {
         });
         app.model.buildSectionCombinations(schedules[course_code]);
       });
+
+      download_time = performance.now() - t0;
+      console.log('Download duration (ms)', download_time);
       
       console.log("Got them schedules", schedules);
       self.schedules(schedules);
@@ -198,19 +210,28 @@ app.controller = function() {
       self.viewer.schedules(schedules);
 
       // Get only valid course codes in preferred list
+      var old_preferred_input = self.preferred_input();
       preferred = Object.keys(schedules);
       self.preferred(preferred);
       self.preferred_input(preferred.join(' '));
 
       // Panic if there are less valid course codes than number requested
       if (preferred.length < count) {
+        // Clear all selections
+        self.conflicting_pairs = m.prop([]);
+        self.section_selections = m.prop([]);
+        self.active_selection = m.prop("");
+        self.viewer.section_selection('');
+
+        // Panic
         alert("Nope: Some of the course codes were wrong. \r\nMaybe you choose wrong term?");
         self.state(app.state.READY);
+        ga('send', 'exception', {'exDescription': "Nope: Some of the course codes (" + old_preferred_input + ") were wrong. \r\nMaybe you choose wrong term (" + self.term() + ")?", 'exFatal': false});
         m.redraw();
         return;
       }
 
-      var t0 = performance.now();
+      t0 = performance.now();
       
       // Find the pairs of courses that conflict
       var conflicting_pairs = Combinatorics.combination(preferred, 2).filter(function (pair) {
@@ -291,7 +312,17 @@ app.controller = function() {
       self.introscreen(false);
       self.state(app.state.READY);
 
-      console.log("Duration of ctrl.go (ms)", performance.now() - t0);
+      processing_time = performance.now() - t0;
+      console.log("Duration of ctrl.go (ms)", processing_time);
+
+      ga('send', 'event', 'go', 'done', {
+        'dimension1': preferred.join(' '),
+        'dimension2': count,
+        'dimension3': self.term(),
+        'metric1': preferred.length,
+        'metric2': Math.round(download_time*1000),
+        'metric3': Math.round(processing_time*1000),
+      });
 
       m.redraw();
     });
@@ -304,15 +335,13 @@ app.controller = function() {
     console.log("Showing selection", section_selection);
     this.active_selection(active_selection);
     this.viewer.section_selection(section_selection);
+    ga('send', 'event', 'selection', 'click');
     return false;
   };
 
   this.section_click = function (course_code, section_code) {
     console.log("Section click", course_code, section_code);
 
-    console.log("active selection", this.active_selection());
-    console.log("section selections", this.section_selections());
-    
     // TODO Reeeeeally clean this shit up (string manipulation is so dirty)
     var section_type = section_code.split(" ")[0];
     var full_section_codes = this.viewer.section_selection().split("/");
@@ -342,6 +371,8 @@ app.controller = function() {
 
     // Change it in the controller's section selections too
     this.section_selections()[this.active_selection()] = new_section_selection;
+
+    ga('send', 'event', 'section', 'click');
 
     return false;
   };
@@ -603,6 +634,7 @@ app.view = function(ctrl) {
   var section_numbers_by_type_by_course = {};
   active_selection && schedules && active_selection.split(" ").forEach(function (course_code) {
     if (!course_code) return;
+    if (!schedules[course_code]) return;
 
     var section_numbers_by_type = {};
     var section_codes_by_type = app.model.splitSectionCodesByType(Object.keys(schedules[course_code]));
@@ -648,6 +680,7 @@ app.view = function(ctrl) {
               title: "Courses you're interested in taking (each course separated by a space)",
               placeholder: "Courses (format: ece484 mte241 ...)",
               autocomplete: "off",
+              disabled: (ctrl.state() == app.state.READY) ? "" : "disabled",
               onkeyup: m.withAttr("value", ctrl.preferred_input),
               value: ctrl.preferred_input()
             }),
@@ -656,6 +689,7 @@ app.view = function(ctrl) {
               title: "How many courses you take this term",
               placeholder: "How many",
               autocomplete: "off",
+              disabled: (ctrl.state() == app.state.READY) ? "" : "disabled",
               onkeyup: function (e) {
                 ctrl.count(Number(e.target.value) ? Number(e.target.value) : '');
               },
@@ -663,6 +697,7 @@ app.view = function(ctrl) {
             }),
             m("select#term", {
               title: "Which academic term you're planning for",
+              disabled: (ctrl.state() == app.state.READY) ? "" : "disabled",
               value: ctrl.term(),
               onchange: function (e) {
                 ctrl.term(e.target.value);
@@ -754,7 +789,7 @@ app.view = function(ctrl) {
                           onmouseout: ctrl.hover_course.bind(ctrl, ''),
                         }, m("a", {
                           class: (active_selection && active_selection.indexOf(course_code) != -1) ? "active" : "",
-                        }, [m("span", course_code), " ", ctrl.course_data()[course_code].title]
+                        }, [m("span", course_code), " ", (ctrl.course_data()[course_code] && ctrl.course_data()[course_code].title)]  // FIXME
                         )
                       );
                     })
@@ -869,6 +904,7 @@ scheduleViewer.view = function(ctrl) {
 
     Object.keys(section_selection_by_course).forEach(function (course_code) {
       var course = schedules[course_code];
+      if (!course) return;  // FIXME
       var section_codes = section_selection_by_course[course_code];
       section_codes.forEach(function (section_code) {
         var section = course[section_code];
