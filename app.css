@@ -65,8 +65,8 @@ li.none {
 }
 
 .introscreen #header .subtitle {
-	font-size: 23pt;
-	margin: 3px 0 12px 0;
+	font-size: 24pt;
+	margin: 2px 0 15px 0;
 	cursor: default;
 	-webkit-user-select: none;
 	   -moz-user-select: none;
@@ -84,7 +84,8 @@ li.none {
 }
 
 #header .subtitle a {
-	color: inherit;
+	color: #8AE8FF;
+	text-decoration: none;
 }
 
 #header input {
@@ -92,7 +93,7 @@ li.none {
 }
 
 .introscreen #header .box, .introscreen #header select {
-	border-bottom-color: #ffc2b3;
+	border-bottom-color: #ffad99;
 }
 
 #header .box {
@@ -118,6 +119,9 @@ li.none {
 	border: none;
 	border-bottom: 1px solid #ad2300;
 	cursor: text;
+	-moz-appearance: none;
+	text-indent: 0.01px;
+	text-overflow: '';
 }
 
 #header option {
@@ -132,39 +136,41 @@ li.none {
 }
 
 #header .box::-webkit-input-placeholder {
-	color: #FFC2B3;
-	font-size: 14px;
-	padding-top: 4px;
+	color: #ffc2b3;
+	font-size: 18px;
+	/*padding-top: 4px;*/
 }
 
 #header .box::-moz-placeholder {
-	color: #FFC2B3;
-	font-size: 14px;
-	padding-top: 4px;
+	color: #ffc2b3;
+	font-size: 18px;
+	/*padding-top: 4px;*/
+	opacity: 1;
 }
 
 #header .box:-ms-input-placeholder {
-	color: #FFC2B3;
-	font-size: 14px;
-	padding-top: 4px;
+	color: #ffc2b3;
+	font-size: 18px;
+	/*padding-top: 4px;*/
 }
 
 #header .btn {
-	margin: 0;
+	margin: 0 0 0 9px;
 	padding: 9px;
 	outline: none;
-	border: 1px solid #ffc2b3;
+	border: 1px solid #ffad99;
 	font-size: 20px;
 	font-family: "Arimo", sans-serif;
 	background-color: transparent;
 	color: #ffd6cc;
-	-webkit-transition: -webkit-transform 0.09s;
-	transition: transform 0.09s;
+	-webkit-transition: -webkit-transform 0.09s, opacity 0.09s;
+	transition: transform 0.09s, opacity 0.09s;
 }
 
 #header .btn:hover, #header .btn:active {
-	color: #fff;
+	color: #ad2300;
 	border-color: #fff;
+	background-color: rgba(255, 235, 230, 1);
 }
 
 #header .btn:active {
@@ -173,9 +179,18 @@ li.none {
 }
 
 #header .btn[disabled] {
-	border: none;
-	font-style: italic;
+	opacity: 0.5;
 	color: #ffd6cc;
+	background: transparent;
+}
+
+#header .btn[disabled]:hover {
+	border-color: #ffad99;
+}
+
+#header .btn[disabled]:active {
+	-webkit-transform: none;
+	transform: none;
 }
 
 #preferred {
@@ -215,6 +230,10 @@ li.none {
 	list-style-type: none;
 	/*padding: 2px;*/
 	border-bottom: 1px solid #bbb;
+}
+
+.nice-list li.hover {
+	outline: 2px solid #900;
 }
 
 .nice-list>li:last-child {
@@ -264,9 +283,10 @@ li.none {
 .course-list>li>span {
 	letter-spacing: 0.04em;
 	color: #333;
+	font-size: 1.3em;
 	font-weight: bold;
 	float: right;
-	padding: 4px 3px;
+	padding: 2px 3px;
 }
 
 .section-list {
@@ -286,7 +306,7 @@ li.none {
 }
 
 .section-list .active {
-	background-color: #888 !important;
+	background-color: #666 !important;
 	color: #fff !important;
 }
 
@@ -370,6 +390,11 @@ li.none {
 	font-size: 1em;
 }
 
+.schedule-viewer td.hover div {
+	cursor: default;
+	outline: 3px solid #900;
+}
+
 .schedule-viewer td>div {
 	width: 100%;
 	height: 100%;
@@ -451,7 +476,7 @@ td.something div, .legend span.something {
 }
 
 #courses .nice-list a {
-	color: #999;
+	color: #afafaf;
 }
 
 #courses .nice-list a.active {

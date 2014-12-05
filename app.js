@@ -69,11 +69,12 @@ app.state = {
 
 app.controller = function() {
   this.preferred_input = m.prop("");
-  this.count = m.prop(''  );
-  this.term = m.prop(1149);
+  this.count = m.prop('');
+  this.term = m.prop(1151);
 
   this.introscreen = m.prop(true);
   this.state = m.prop(app.state.READY);
+  this.hover_course = m.prop('');
 
   this.schedules = m.prop({});
   this.course_data = m.prop({});
@@ -82,8 +83,9 @@ app.controller = function() {
   this.section_selections = m.prop([]);
   this.active_selection = m.prop("");
   this.preferred = m.prop([]);
-  
+
   this.viewer = new scheduleViewer.controller();
+  this.viewer.hover_course = this.hover_course;
 
   this.debug = m.prop("");
 
@@ -110,9 +112,9 @@ app.controller = function() {
     console.log("Number of courses", count);
 
     // Sanity checks
-    if (!count || count < 1 || count > 6) {
-      this.trace("Nope: You must have between 1 and 6 courses");
-      alert("Nope: You must have between 1 and 6 courses.");
+    if (!count || count < 2 || count > 6) {
+      this.trace("Nope: You must have between 2 and 6 courses");
+      alert("Nope: You must have between 2 and 6 courses.");
       return;
     }
     if (preferred.length < count) {
@@ -284,7 +286,6 @@ app.controller = function() {
       
       // Show the schedule in the viewer
       var default_selection = Object.keys(section_selections)[0];
-      console.log('default_selection', default_selection, 'section_selection', section_selections[default_selection]);
       self.viewer.section_selection(section_selections[default_selection]);
       self.active_selection(default_selection);
       self.introscreen(false);
@@ -599,7 +600,7 @@ app.view = function(ctrl) {
 
   // For the active selection, the available section numbers categorised by section type by course
   var section_numbers_by_type_by_course = {};
-  active_selection && active_selection.split(" ").forEach(function (course_code) {
+  active_selection && schedules && active_selection.split(" ").forEach(function (course_code) {
     if (!course_code) return;
 
     var section_numbers_by_type = {};
@@ -626,30 +627,33 @@ app.view = function(ctrl) {
         rel: "stylesheet",
         href: "app.css"
       }),
+      m("title", "LooPlanner"),
     ]),
     m("body", {class: ctrl.introscreen() ? "introscreen" : ""}, [
       m("div#header", [
         m("div#logo", "LooPlanner"),
         m("div#search", [
           m("p.subtitle", [
-            m.trust("Tell me every course you interest, my friend, I find many working timetable for you! "),
+            "Tell me ",
+            m("a", {href: "http://www.adm.uwaterloo.ca/infocour/CIR/SA/under.html", target: "_blank"}, "every course you interest"),
+            ", my friend, I find many working timetable for you! ",
             ((ctrl.state() == app.state.READY) ?
-                m("a", {href: "javascript:void(0);", onclick: ctrl.go_example.bind(ctrl)}, "Example?")
+                m("a", {href: "javascript:void(0);", onclick: ctrl.go_example.bind(ctrl)}, "(Try example)")
               : "It's coming!"
             ),
           ]),
           m("form", {onsubmit: function (e) {e.preventDefault(); ctrl.go.call(ctrl, ctrl.preferred_input, ctrl.count);}}, [
             m("input.box#preferred", {
               title: "Courses you're interested in taking (each course separated by a space)",
-              placeholder: "Courses you're interested in (format: ece484 mte241 msci331 ...)",
-              onchange: m.withAttr("value", ctrl.preferred_input),
+              placeholder: "Courses (format: ece484 mte241 ...)",
+              onkeyup: m.withAttr("value", ctrl.preferred_input),
               value: ctrl.preferred_input()
             }),
             m("input.box#count", {
-              type: "number", min: 1, max: 6,
+              type: "number", min: 2, max: 6,
               title: "How many courses you take this term",
-              placeholder: "How many you take",
-              onchange: function (e) {
+              placeholder: "How many",
+              onkeyup: function (e) {
                 ctrl.count(Number(e.target.value) ? Number(e.target.value) : '');
               },
               value: ctrl.count()
@@ -667,7 +671,7 @@ app.view = function(ctrl) {
             m("input.btn", {
               type: "submit",
               value: buttonValues[ctrl.state()],
-              disabled: (ctrl.state() == app.state.READY) ? "" : "disabled",
+              disabled: (ctrl.state() == app.state.READY && ctrl.count() > 1 && (ctrl.count() <= ctrl.preferred_input().trim().split(' ').length)) ? "" : "disabled",
             }),
           ]),
         ]),
@@ -685,23 +689,13 @@ app.view = function(ctrl) {
                             class: "active",
                             onclick: ctrl.selection_click.bind(ctrl, section_selections[selection], selection)
                           }, selection),
-                          // m("ul.course-list", [
-                          //   selection.split(" ").map(function (course_code) {
-                          //     return m("li", [
-                          //       m("span", course_code),
-                          //       m("ul.section-list", [
-                          //         Object.keys(schedules[course_code]).map(function (section_code) {
-                          //           return m("li", {
-                          //             class: (section_selections[selection].indexOf(course_code + ":" + section_code) !== -1) ? "active" : ""
-                          //           }, m("a", {onclick: ctrl.section_click.bind(ctrl, course_code, section_code)}, section_code));
-                          //         }),
-                          //       ]),
-                          //     ]);
-                          //   }),
-                          // ]),
                           m("ul.course-list", [
                             Object.keys(section_numbers_by_type_by_course).map(function (course_code) {
-                              return m("li", [
+                              return m("li", {
+                                  class: (ctrl.hover_course() == course_code) ? 'hover': '',
+                                  onmouseover: ctrl.hover_course.bind(ctrl, course_code),
+                                  onmouseout: ctrl.hover_course.bind(ctrl, ''),
+                                }, [
                                 m("span", course_code),
                                 m("ul.section-list", [
                                   Object.keys(section_numbers_by_type_by_course[course_code]).map(function (section_type) {
@@ -740,14 +734,19 @@ app.view = function(ctrl) {
               ]),
             ]),
             m("div#courses", [
-              m("strong", "Courses you're interested in (" + ctrl.preferred().length + ")"),
+              m("strong", "Your wishlist (" + ctrl.preferred().length + ")"),
               m("ul.nice-list", [
                 (ctrl.preferred().length
                   ? ctrl.preferred().map(function (course_code) {
-                      return m("li", m("a", {
-                        class: (active_selection && active_selection.indexOf(course_code) != -1) ? "active" : "",
-                      }, [m("span", course_code), " ", ctrl.course_data()[course_code].title]
-                      ));
+                      return m("li", {
+                          class: (ctrl.hover_course() == course_code) ? "hover" : "",
+                          onmouseover: ctrl.hover_course.bind(ctrl, course_code),
+                          onmouseout: ctrl.hover_course.bind(ctrl, ''),
+                        }, m("a", {
+                          class: (active_selection && active_selection.indexOf(course_code) != -1) ? "active" : "",
+                        }, [m("span", course_code), " ", ctrl.course_data()[course_code].title]
+                        )
+                      );
                     })
                   : m("li.none", "(none)")
                 )
@@ -779,6 +778,7 @@ var scheduleViewer = {};
 scheduleViewer.controller = function() {
   this.schedules = m.prop();
   this.section_selection = m.prop();
+  this.hover_course = m.prop('');
 };
 
 scheduleViewer.view = function(ctrl) {
@@ -891,6 +891,8 @@ scheduleViewer.view = function(ctrl) {
     var css = componentClass(label);
     var rowspan, height;
 
+    var course_code = ""; // First course code that appears in this cell
+
     if (label_table[period-1] && label_table[period-1][day] && label_table[period-1][day] == label) {
       // No cell here, there's already a rowspan'd cell above
       return null;
@@ -910,6 +912,7 @@ scheduleViewer.view = function(ctrl) {
             ? (" (" + section.split("(")[1])
             : ""
           );
+          course_code = course_code || parts[0];
           return parts[0] + " " + parts[1] + oddeven;  // Get only the course code + section type + odd/even (if applicable)
         });
         label = sections.join("or ");
@@ -920,7 +923,20 @@ scheduleViewer.view = function(ctrl) {
       if (rowspan > 1) {
         css += " tall";
       }
-      return {label: nl2br(label), class: css, rowspan: rowspan, height: height};
+
+      // Handle "fake hovering" cells
+      if (ctrl.hover_course() && label.indexOf(ctrl.hover_course()) != -1) {
+        css += " hover";
+      }
+
+      var mouseover = function () {};
+      var mouseout  = function () {};
+      if (course_code) {
+        mouseover = ctrl.hover_course.bind(ctrl, course_code);
+        mouseout  = ctrl.hover_course.bind(ctrl, "");
+      }
+
+      return {label: nl2br(label), class: css, rowspan: rowspan, height: height, mouseover: mouseover, mouseout: mouseout};
     }
   };
   
@@ -940,14 +956,17 @@ scheduleViewer.view = function(ctrl) {
           (period%2-1) ? m("th.period", {rowspan: 2}, periodToString(period)) : "",    // 08:30-09:30, etc.
           [0, 1, 2, 3, 4].map(function (day) {
             var cell = tableCell(day, period);
-            return cell ? m("td", {class: cell.class, style: "height: " + cell.height + "px", rowspan: cell.rowspan}, m("div", m("span", cell.label))) : "";
+            return cell ? m("td", {class: cell.class, onmouseover: cell.mouseover, onmouseout: cell.mouseout, style: "height: " + cell.height + "px", rowspan: cell.rowspan}, m("div", m("span", cell.label))) : "";
           }),
         ]);
       }),
     ]),
-    m("div.legend", ["(ev): Even weeks. (od): Odd weeks.", m("br"),
-      m("span.lecture"), "Lecture", m("span.tutorial"), "Tutorial", m("span.laboratory"), "Laboratory", m("br"), 
-      m("span.project"), "Project", m("span.conflict"), "Conflict", m("span.something"), "Others", 
+    m("div.legend", [
+      m("p", "(ev): Even weeks. (od): Odd weeks."),
+      m("p", [
+        m("span.lecture"), "Lecture", m("span.tutorial"), "Tutorial", m("span.laboratory"), "Laboratory", m("br"), 
+        m("span.project"), "Project", m("span.conflict"), "Conflict", m("span.something"), "Others",
+      ]),
     ]),
   ]);
 };
