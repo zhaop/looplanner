@@ -640,12 +640,14 @@ app.view = function(ctrl) {
           ]),
           m("form", {onsubmit: function (e) {e.preventDefault(); ctrl.go.call(ctrl, ctrl.preferred_input, ctrl.count);}}, [
             m("input.box#preferred", {
+              title: "Courses you're interested in taking (each course separated by a space)",
               placeholder: "Courses you're interested in (format: ece484 mte241 msci331 ...)",
               onchange: m.withAttr("value", ctrl.preferred_input),
               value: ctrl.preferred_input()
             }),
             m("input.box#count", {
               type: "number", min: 1, max: 6,
+              title: "How many courses you take this term",
               placeholder: "How many you take",
               onchange: function (e) {
                 ctrl.count(Number(e.target.value) ? Number(e.target.value) : '');
@@ -653,6 +655,7 @@ app.view = function(ctrl) {
               value: ctrl.count()
             }),
             m("select#term", {
+              title: "Which academic term you're planning for",
               value: ctrl.term(),
               onchange: function (e) {
                 ctrl.term(e.target.value);
