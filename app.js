@@ -777,7 +777,7 @@ app.view = function(ctrl) {
         " or ",
         m("a", {href: "https://twitter.com/zhaopatrick"}, "@zhaopatrick"),
         ". ",
-        ["For great justice.", "For great good.", "For science."][(new Date).getMinutes()/20 | 0],
+        ["For great justice.", "For great good.", "For science."][(new Date).getMinutes()%3],
       ]),
     ]),
   ]);
