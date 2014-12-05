@@ -646,6 +646,7 @@ app.view = function(ctrl) {
             m("input.box#preferred", {
               title: "Courses you're interested in taking (each course separated by a space)",
               placeholder: "Courses (format: ece484 mte241 ...)",
+              autocomplete: "off",
               onkeyup: m.withAttr("value", ctrl.preferred_input),
               value: ctrl.preferred_input()
             }),
@@ -653,6 +654,7 @@ app.view = function(ctrl) {
               type: "number", min: 2, max: 6,
               title: "How many courses you take this term",
               placeholder: "How many",
+              autocomplete: "off",
               onkeyup: function (e) {
                 ctrl.count(Number(e.target.value) ? Number(e.target.value) : '');
               },
