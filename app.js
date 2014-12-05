@@ -666,10 +666,12 @@ app.view = function(ctrl) {
       m("div#header", [
         m("div#logo", "LooPlanner"),
         m("div#search", [
-          m("p.subtitle", [
+          m("p.subtitle", {
+            title: "Give him a list of all the courses you're interested in taking, and he'll tell you which ones have schedules that go well together."
+          }, [
             "Tell me ",
-            m("a", {href: "http://www.adm.uwaterloo.ca/infocour/CIR/SA/under.html", target: "_blank"}, "every course you interest"),
-            ", my friend, I find many working timetable for you! ",
+            m("a", {href: "http://www.adm.uwaterloo.ca/infocour/CIR/SA/under.html", target: "_blank"}, "every course you interest in taking"),
+            ", my friend, I find working timetables for you! ",
             ((ctrl.state() == app.state.READY) ?
                 m("a", {href: "javascript:void(0);", onclick: ctrl.go_example.bind(ctrl)}, "(Try example)")
               : "Is coming!"
@@ -678,7 +680,7 @@ app.view = function(ctrl) {
           m("form", {onsubmit: function (e) {e.preventDefault(); ctrl.go.call(ctrl, ctrl.preferred_input, ctrl.count);}}, [
             m("input.box#preferred", {
               title: "Courses you're interested in taking (each course separated by a space)",
-              placeholder: "Courses (format: ece484 mte241 ...)",
+              placeholder: "As many courses as you want (like: ece484 mte241 ...)",
               autocomplete: "off",
               disabled: (ctrl.state() == app.state.READY) ? "" : "disabled",
               onkeyup: m.withAttr("value", ctrl.preferred_input),
@@ -686,8 +688,8 @@ app.view = function(ctrl) {
             }),
             m("input.box#count", {
               type: "number", min: 2, max: 6,
-              title: "How many courses you take this term",
-              placeholder: "How many",
+              title: "How many courses you're planning to take",
+              placeholder: "Pick how many",
               autocomplete: "off",
               disabled: (ctrl.state() == app.state.READY) ? "" : "disabled",
               onkeyup: function (e) {
