@@ -118,10 +118,10 @@ app.controller = function() {
     ga('send', 'event', 'go', 'start');
 
     // Sanity checks
-    if (!count || count < 2 || count > 6) {
-      this.trace("Nope: You must have between 2 and 6 courses");
-      alert("Nope: You must have between 2 and 6 courses.");
-      ga('send', 'exception', {'exDescription': "Nope: You must have between 2 and 6 courses ("+count+" given)", 'exFatal': false});
+    if (!count || count < 1 || count > 6) {
+      this.trace("Nope: You must have between 1 and 6 courses");
+      alert("Nope: You must have between 1 and 6 courses.");
+      ga('send', 'exception', {'exDescription': "Nope: You must have between 1 and 6 courses ("+count+" given)", 'exFatal': false});
       return;
     }
     if (preferred.length < count) {
@@ -234,33 +234,35 @@ app.controller = function() {
       t0 = performance.now();
       
       // Find the pairs of courses that conflict
-      var conflicting_pairs = Combinatorics.combination(preferred, 2).filter(function (pair) {
-        var all_section_selections = Combinatorics.cartesianProduct(schedules[pair[0]].section_combinations, schedules[pair[1]].section_combinations).toArray();
+      var conflicting_pairs = [];
+      if (count >= 2) {
+        conflicting_pairs = Combinatorics.combination(preferred, 2).filter(function (pair) {
+          var all_section_selections = Combinatorics.cartesianProduct(schedules[pair[0]].section_combinations, schedules[pair[1]].section_combinations).toArray();
 
-        var schedulesConflict = function(section_selection) {
-          // Input is like [["LEC 001", "TUT 101"], ["LEC 001", "TUT 102", "LAB 201"]]
+          var schedulesConflict = function(section_selection) {
+            // Input is like [["LEC 001", "TUT 101"], ["LEC 001", "TUT 102", "LAB 201"]]
 
-          var canvas_schedule = new Uint32Array(10);
+            var canvas_schedule = new Uint32Array(10);
 
-          section_selection[0].forEach(function (section_code) {
-            app.model.schedule.or(canvas_schedule, schedules[pair[0]][section_code]);
-          });
+            section_selection[0].forEach(function (section_code) {
+              app.model.schedule.or(canvas_schedule, schedules[pair[0]][section_code]);
+            });
 
-          var hasConflict = section_selection[1].some(function (section_code) {
-            var section_schedule = schedules[pair[1]][section_code];
-            if (app.model.schedule.hasConflict(canvas_schedule, section_schedule)) {
-              return true;
-            }
-            app.model.schedule.or(canvas_schedule, section_schedule);
-          });
+            var hasConflict = section_selection[1].some(function (section_code) {
+              var section_schedule = schedules[pair[1]][section_code];
+              if (app.model.schedule.hasConflict(canvas_schedule, section_schedule)) {
+                return true;
+              }
+              app.model.schedule.or(canvas_schedule, section_schedule);
+            });
 
-          return hasConflict;
-        };
+            return hasConflict;
+          };
 
-        return all_section_selections.every(schedulesConflict);
-      });
-      conflicting_pairs.sort();
-      // conflicting_pairs.push(["ECE484","ME269"],["ECE484","MTE420"]);
+          return all_section_selections.every(schedulesConflict);
+        });
+        conflicting_pairs.sort();
+      }
       console.log("Course pairs whose schedules conflict", conflicting_pairs);
       
       // Find all possible course selections, then remove those that contain conflicting pairs
@@ -660,11 +662,11 @@ app.view = function(ctrl) {
         rel: "stylesheet",
         href: "app.css"
       }),
-      m("title", "LooPlanner"),
+      m("title", "looplanner: Find your own course timetable"),
     ]),
     m("body", {class: ctrl.introscreen() ? "introscreen" : ""}, [
       m("div#header", [
-        m("div#logo", "LooPlanner"),
+        m("div#logo", "looplanner"),
         m("div#search", [
           m("p.subtitle", {
             title: "Give him a list of all the courses you're interested in taking, and he'll tell you which ones have schedules that go well together."
@@ -687,8 +689,8 @@ app.view = function(ctrl) {
               value: ctrl.preferred_input()
             }),
             m("input.box#count", {
-              type: "number", min: 2, max: 6,
-              title: "How many courses you're planning to take",
+              type: "number", min: 1, max: 6,
+              title: "How many courses you're planning to take (1 - 6)",
               placeholder: "Pick how many",
               autocomplete: "off",
               disabled: (ctrl.state() == app.state.READY) ? "" : "disabled",
@@ -711,7 +713,7 @@ app.view = function(ctrl) {
             m("input.btn", {
               type: "submit",
               value: buttonValues[ctrl.state()],
-              disabled: (ctrl.state() == app.state.READY && ctrl.count() > 1 && (ctrl.count() <= ctrl.preferred_input().trim().split(' ').length)) ? "" : "disabled",
+              disabled: (ctrl.state() == app.state.READY && ctrl.count() > 0 && ctrl.preferred_input() && (ctrl.count() <= ctrl.preferred_input().trim().split(' ').length)) ? "" : "disabled",
             }),
           ]),
         ]),
