@@ -140,12 +140,12 @@ app.controller = function() {
     var schedules = {}, course_schedule, course_data = {};
     var t0 = performance.now(), download_time, processing_time;
     Q.all(preferred.map(function(course_code) {
-      return ajax.get(api.url.schedule(
-        course_code.replace(/[0-9]+/, ''),
-        course_code.replace(/[A-Z]+/, '')
-      ), {
+      
+      var parts = course_code.match(/(^[A-Z]+)([0-9A-Z]+)/) || ['', '', ''];
+      return ajax.get(api.url.schedule(parts[1], parts[2]), {
         term: self.term()
       });
+
     })).then(function(courses) {
       
       // Short-circuit ajax data
